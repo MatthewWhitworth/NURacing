@@ -1,0 +1,4 @@
+Nice-To-Haves (Next Year)
+	Caps on -ve inputs of comparators so fault detection doesnt latch on start up
+	male pin header for jumper to allow for live readings of faults OR replace button with switch
+	ANDed comparator outputs (open collectors), reduces need for AND gates and pullups and simplifies routing

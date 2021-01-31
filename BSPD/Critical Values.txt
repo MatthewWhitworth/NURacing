@@ -1,0 +1,3 @@
+Power = 5kW
+Assumed Voltage = Nominal
+Fault persistance = 500ms

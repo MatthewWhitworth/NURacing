@@ -1,0 +1,22 @@
+Trip Current
+
+	P = 5kW
+	Vnominal = 117.6 - 155.4 - 176.4 V
+	Itrip = 42.5 - 32.1 - 28.3 A
+
+	at 28.3 amps
+		output = 2.60V
+
+	P = VI
+	I = P/V
+
+15kW per motor
+
+250 I max
+	
+Brake range 0.5 to 4.5
+	realistic output 0.5 to 
+
+will need molex connector
+
+Include schematic of BSPD.  Clearly show current sensor input, brake input and shutdown circuit output.  Be sure schematic includes details addressing latching and timing.

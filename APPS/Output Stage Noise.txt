@@ -1,0 +1,5 @@
+Cap eliminated ac noise
+
+Switch with pulldown incapable of filtering ac
+Op-amp able to counteract ac noise when trying to apply 0 voltage
+	explains why proto apps with opamp output stage works but open analog switch on pcb doesnt work

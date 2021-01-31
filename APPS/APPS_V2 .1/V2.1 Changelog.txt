@@ -1,0 +1,6 @@
+V2.1 Changelog
+	Connected boundary fault detection inputs to raw throttle signals instead of scaled
+	Removed JP1 as it is obselete
+	added 4 pin plug with apps out and fault conditions for ccu
+	added solder bridge over button to enable live fault detection
+	Some rerouting to accomodate plug

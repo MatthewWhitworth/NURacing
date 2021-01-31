@@ -1,0 +1,35 @@
+changes
+	C1 0.22uF
+	R33 R34 R37 R39 15k
+
+Offset gain: cf/de
+
+TPS1 2.120k
+1.0 - 4.5
+	gain 1.43 (51/36 1.42)
+	ra = 300
+	rb = 600 (620)
+
+TPS2 2.030k
+0.5 - 3.5
+	gain 1.67 (1/0.6) (20/12 1.67)
+	ra = 1k
+	rb = 330
+
+1.0 - 4.5
+
+Check gain
+	new gain values appear to have solved problem, diff resistors are significantly larger than
+	sensor resistors. sim and testing proves this to work.
+
+Check fault condition operating as intended
+
+Time delay wrong
+	Problem: decay of capacitor inaccurate at low voltage(0.45), adjusted comparator to switch at 2.5 V, more predictable.
+	3 second instead of 100m
+	R28 10k
+	R35 100K
+	R36 20k
+	R38 20K
+	C   2.2u
+	

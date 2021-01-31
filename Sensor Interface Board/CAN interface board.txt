@@ -1,0 +1,8 @@
+Can controller/interface board in each enclosure to communicate
+analog signals to not leave their enclosures
+
+Someone already working on an interface board?
+
+compact and versatile to fit into each enclosure (future proof for sensor interface enclosures?)
+
+using large datalogger ccu board vs dedicated CAN Controller vs using both situationally
