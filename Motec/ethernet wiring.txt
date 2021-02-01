@@ -1,0 +1,7 @@
+1 Ethernet Rx +		Green	to 67
+2 Ethernet Rx -		Blue	to 68
+3 Ethernet Tx +		Orange	to 77
+6 Ethernet Tx -		Pink	to 78
+
+Bat - to pin 7
+Bat + to pin 8
