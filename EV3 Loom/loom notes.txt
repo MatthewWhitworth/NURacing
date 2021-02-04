@@ -1,0 +1,5 @@
+Rear control hub
+	teensy can controller
+	contains motor cooling controller
+
+2x 2 wire thermocouple for each rad
