@@ -1,6 +1,5 @@
 //NURacing Matthew Whitworth
 //datalogger to interface with CoolTerm
-//Add extra analog inputs up to a maximum of 15 as needed
 //modify freq to control sampling rate
 //HX711 library interfaces with load cell amps
 //flow rate sensor based on pulse frequency from hall effect
@@ -12,7 +11,7 @@
 #define calibration_factor_2 485000
 #define calibration_factor_3 484000
 
-#define LOADCELL_DOUT_PIN_1  2
+#define LOADCELL_DOUT_PIN_1  8
 #define LOADCELL_SCK_PIN_1  3
 #define LOADCELL_DOUT_PIN_2  4
 #define LOADCELL_SCK_PIN_2  5
@@ -25,11 +24,16 @@ HX711 scale3;
 
 //Flow rate (L/min) = pulse frequency (Hz) / 7.5
 volatile int  flow_frequency;  // Measures flow meter pulses
-int flowPin = 8;
+unsigned char flowPin = 2;
 
-int freq = 5;  //Number of samples per second (hz)
+long freq = 5.0;  //Number of samples per second (hz)
 long t = 0;
 int sampleRate;
+
+void flow ()                  // Interrupt function
+{ 
+   flow_frequency++;
+} 
 
 void setup() {
   Serial.begin(9600);
@@ -53,9 +57,9 @@ void setup() {
 void loop() {
   if(millis() - t >= sampleRate) {
     t = millis();
-    flow_frequency = 0;                                       // Reset Counter
     //multiply flow_frequency by freq to account for the shorter amount of time to count pulses
-    Serial.print((flow_frequency * freq) / 7.5, 2);   // print litres/min
+    Serial.print((flow_frequency * freq) / 7.5);   // print litres/min
+    flow_frequency = 0;                                       // Reset Counter
     Serial.print(",");
     Serial.print(scale1.get_units(), 2); //scale.get_units() returns a float
     Serial.print(",");
@@ -65,8 +69,3 @@ void loop() {
     Serial.println();
   }
 }
-
-void flow ()                  // Interrupt function
-{ 
-   flow_frequency++;
-} 
