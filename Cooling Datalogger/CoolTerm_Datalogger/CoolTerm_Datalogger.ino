@@ -26,6 +26,8 @@ HX711 scale3;
 volatile int  flow_frequency;  // Measures flow meter pulses
 unsigned char flowPin = 2;
 
+int voltagePin = A0;
+
 long freq = 5.0;  //Number of samples per second (hz)
 long t = 0;
 int sampleRate;
@@ -40,6 +42,7 @@ void setup() {
   sampleRate = 1000/freq;
 
   pinMode(flowPin, INPUT);
+  pinMode(voltagePin, INPUT);
   attachInterrupt(0, flow, RISING); // Setup Interrupt
   sei();                            // Enable interrupts   
   
@@ -66,6 +69,9 @@ void loop() {
     Serial.print(scale2.get_units(), 2); //scale.get_units() returns a float
     Serial.print(",");
     Serial.print(scale3.get_units(), 2); //scale.get_units() returns a float
+    Serial.print(",");
+    float val = analogRead(voltagePin);
+    Serial.print(val*(4.0/261.0), 2);
     Serial.println();
   }
 }
