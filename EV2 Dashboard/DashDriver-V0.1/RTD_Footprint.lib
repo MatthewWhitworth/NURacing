@@ -1,0 +1,22 @@
+EESchema-LIBRARY Version 2.4
+#encoding utf-8
+#
+# RTD_Daughter
+#
+DEF RTD_Daughter J 0 0 Y Y 1 F N
+F0 "J" -100 400 50 H V C CNN
+F1 "RTD_Daughter" -100 500 50 H V C CNN
+F2 "" 500 50 50 H I C CNN
+F3 "" 500 50 50 H I C CNN
+DRAW
+S 550 250 1000 -450 0 1 0 N
+X +12V 1 0 250 200 R 50 50 0 0 W
+X +5V 2 0 150 200 R 50 50 0 0 W
+X Gnd 3 0 50 200 R 50 50 0 0 W
+X Enable 4 0 -50 200 L 50 50 0 0 B
+X BrakeSwitch 5 0 -150 200 L 50 50 0 0 B
+X DashSw 6 0 -250 200 L 50 50 0 0 B
+ENDDRAW
+ENDDEF
+#
+#End Library

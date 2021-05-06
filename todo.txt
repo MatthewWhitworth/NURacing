@@ -1,0 +1,5 @@
+check precharge for indicator light
+
+closed loop bspd ground?
+
+digitize loop and shutdown topology

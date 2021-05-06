@@ -1,5 +1,0 @@
-Rear Node Pseudocode
-
-Read and store can 2
-redefine id
-send message back out onto can 1 with new id

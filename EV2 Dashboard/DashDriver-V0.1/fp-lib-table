@@ -1,0 +1,6 @@
+(fp_lib_table
+  (lib (name teensy)(type KiCad)(uri ${KIPRJMOD}/teensy.pretty-master)(options "")(descr ""))
+  (lib (name digikey-footprints)(type KiCad)(uri ${KIPRJMOD}/digikey-kicad-library-master/digikey-footprints.pretty)(options "")(descr ""))
+  (lib (name DashDriver-V0)(type KiCad)(uri ${KIPRJMOD}/DashDriver-V0.pretty)(options "")(descr ""))
+  (lib (name NuRacing)(type KiCad)(uri ${KIPRJMOD}/NuRacing.pretty)(options "")(descr ""))
+)

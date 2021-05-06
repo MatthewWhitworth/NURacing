@@ -1,0 +1,20 @@
+@startuml
+start
+
+:Switch on GLVMS;
+
+:Switch on TSMS;
+
+:Push HFR;
+
+if (Tractive System Active) then (Driven)
+  :Foot on brake\nPush RTD;
+else (Driverless)
+  :Hold driverless button
+  for 3 seconds;
+endif
+
+:Vehicle Operational;
+
+stop
+@enduml
