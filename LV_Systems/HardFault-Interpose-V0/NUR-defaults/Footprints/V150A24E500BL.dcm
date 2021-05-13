@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP V150A24E500BL
+D Isolated DC/DC Converters MAXI DC-DC CONVERTER
+K
+F http://cdn.vicorpower.com/documents/datasheets/ds_150vin-maxi-family.pdf
+$ENDCMP
+#
+#End Doc Library
