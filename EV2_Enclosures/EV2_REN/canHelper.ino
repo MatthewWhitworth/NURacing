@@ -26,24 +26,24 @@ void initCanMsg(CAN_message_t *msg, uint8_t length, int addr)
 	This is usedd to prepare data for CAN transmission
  */
 
-//uint8_t collectInputs()
-//{
-//  uint8_t inputs = 0;
-//  if (digitalRead(SDINERTIA) == HIGH)
-//    inputs += 1;
-//  if (digitalRead(SDBOTS) == HIGH)
-//    inputs += 2;
-//  if (digitalRead(SDDASH) == HIGH)
-//    inputs += 4;
-//  if (digitalRead(APPSTRAIL) == HIGH)
-//    inputs += 8;
-//  if (digitalRead(APPSBOUND) == HIGH)
-//    inputs += 16;
+uint8_t collectInputs()
+{
+  uint8_t inputs = 0;
+  if (digitalRead(HF_BSPD) == HIGH)
+    inputs += 1;
+  if (digitalRead(HF_BMS) == HIGH)
+    inputs += 2;
+  if (digitalRead(HF_IMD) == HIGH)
+    inputs += 4;
+  if (digitalRead(HF_Dis) == HIGH)
+    inputs += 8;
+  if (digitalRead(HFL_Out) == HIGH)
+    inputs += 16;
 //  if (digitalRead(APPSDIS) == HIGH)
 //    inputs += 32;
 //  if (digitalRead(BRAKESW) == HIGH)
 //    inputs += 64;
 //  if (digitalRead(RTDGATE) == HIGH)
 //    inputs += 128;
-//  return inputs;
-//}
+  return inputs;
+}
