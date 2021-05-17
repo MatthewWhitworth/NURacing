@@ -57,9 +57,19 @@ void updateBatL(uint8_t batState)
  
 void setHardFaultL(uint8_t LEDno)
 {
-	leds[HF_L_INDEX] = CRGB::Red;
+	leds[HF_L_INDEX + 2*LEDno] = CRGB::Red;
 }
- 
+
+void standbyHardFaultL(uint8_t LEDno)
+{
+  leds[HF_L_INDEX + 2*LEDno] = CRGB::Yellow;
+}
+
+void resetHardFaultL(uint8_t LEDno)
+{
+  leds[HF_L_INDEX + 2*LEDno] = CRGB::Green;
+}
+
 void clearHardFaultL()
 {
 	 for (int i=0;i<4;i++)
@@ -71,10 +81,8 @@ void updateSDL(uint8_t sdState)
 	if (sdState == 255)
 	{
 		leds[SD_L_INDEX] = CRGB::Green;
-	}else if (sdState == 255)	//TODO change this to reflect precharge state
-	{
-		leds[SD_L_INDEX] = CRGB::Yellow;
-	}else
+	}
+	else
 	{
 		leds[SD_L_INDEX] = CRGB::Red;
 	}

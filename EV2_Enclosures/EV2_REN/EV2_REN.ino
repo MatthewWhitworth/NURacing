@@ -30,7 +30,7 @@ void setup(void) {
   can2.begin();
   can2.setBaudRate(250000);
 
-  initCanMsg(&msg_sc, 8, 0x0111100);
+  initCanMsg(&msg_sc, 8, 0x0001100);
 
   pinMode(HF_BMS,INPUT_PULLDOWN);
   pinMode(HF_Dis,INPUT_PULLDOWN);
@@ -65,12 +65,12 @@ void loop() {
   //every 500ms write SC state to bus
   if (millis() - scTime >= 500){
     HF_State = collectInputs();
-    msg.buf[7] = HF_State;
+    msg_sc.buf[7] = HF_State;
     can1.write(msg_sc);
     scTime = millis();
     Serial.println(HF_State);
 
-    //4inputProcess();
+    //inputProcess();
     
   }
   

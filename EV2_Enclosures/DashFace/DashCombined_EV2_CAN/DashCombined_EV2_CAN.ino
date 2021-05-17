@@ -31,6 +31,19 @@ uint8_t throttleValue;
 uint8_t runMode = 0;
 //uint8_t to capture the state of the SDC
 uint8_t shutdownState = 255;	//Init to =0 for production
+uint8_t SC_Rear = 0;
+
+//hard fault states
+bool HFL_State = 0;
+bool Dis_State = 0;
+bool IMD_State = 0;
+bool BMS_State = 0;
+bool BSPD_State = 0;
+int dis = 1;
+int imd = 1;
+int bms = 1;
+int bspd = 1;
+int batV = 0;
 //End of globals
 
 //LED testy
@@ -39,7 +52,7 @@ uint8_t ledIndex = 0;
 //Prototypes
 void updateShutdown(uint8_t *sdlocation);
 
-CAN_message_t BMS_inMsg,CONT_outMsg1,CONT_outMsg2;
+CAN_message_t bus1_in,BMS_inMsg,CONT_outMsg1,CONT_outMsg2;
 int byte1,byte2,byte3,byte4,byte5,byte6,byte7,byte8,byte9,byte10,byte11,byte12,byte13,byte14,byte15,byte16;
 bool flag=0,write_flag=0;
 
@@ -96,14 +109,6 @@ void setup() {
 	//Initialise the transmit CAN message.
 	//Message data: Throttle, RTDState, ShutdownState, 5x Unused
 	initCanMsg(&toRearMsg,8,0x0000100);
-/*
-	//Set up a can mailbox to receive (presently test) data
-	Can2.enableMBInterrupt(MB1);
-	Can2.setMBFilter(MB1,0x100);
-	Can2.onReceive(MB1,testCanSniff);
-	sei();
-	//End of mailbox configuration
-	*/
 
 	//Configure ADC
 	analogReadRes(8);
@@ -206,7 +211,7 @@ void loop() {
 				
 				
 				//Dash display update
-				dashLeft.print((int)shutdownState);
+				dashLeft.print((int)batV);
 				cli();
 				dashLeft.writeDisplay();
 				sei();
@@ -236,12 +241,12 @@ void loop() {
 				//Update data shown on addressable LEDs
 				updateSDL(shutdownState);
 				updateRTDL(isRTD);
-				clearHardFaultL();
+				//clearHardFaultL();
 				updateTrailBrakeL(digitalRead(APPSTRAIL));
 				
 				//LED display update
 				FastLED.show();
-				Can2.write(toRearMsg);
+				//Can2.write(toRearMsg);
 				
 				//Check for RTD Override activation on a low frequency
 				EVERY_N_MILLISECONDS(500){
@@ -294,10 +299,80 @@ void loop() {
 			}
 		}
 	}
+  
+  //process BMS CAN messages and rebroadcast onto main bus
+  BMSProcess();
 
-//
-//process BMS CAN messages and rebroadcast onto main bus
-//
+  //Read and process messages from bus 1
+  Bus1Read();
+
+  //Determine Hard Fault states from can message
+  HFProcess();
+
+  //Update dash HF led's
+  updateHardFaults();
+  
+}
+
+//RTD helper functions in other file 
+
+/*Update the state of the Shudtdown Circuit int
+void, param pointer to shutdown variables
+*/
+void updateShutdown(uint8_t *sdLocation)
+{
+	uint8_t tempSDS = 0;
+	//Inertia Switch
+	if (digitalRead(SDINERTIA) == HIGH)
+		tempSDS |= 0x01;
+	//Brake Overtravel Switch
+	if (digitalRead(SDBOTS) == HIGH)
+		tempSDS |= 0x02;
+	//Dash E-Stop Switch
+	if (digitalRead(SDDASH) == HIGH)
+		tempSDS |= 0x04;
+	//Other parts of the SDC to be retrieved via CAN later
+	if (true)
+		tempSDS |= 0x08;
+	if (true)
+		tempSDS |= 0x10;
+	if (true)
+		tempSDS |= 0x20;
+	if (true)
+		tempSDS |= 0x40;
+	if (true)
+		tempSDS |= 0x80;
+	*sdLocation = tempSDS;
+}
+
+/***************************************************************************************************
+* This is the timer function that is run every 20ms. Each iteration it toggles the boolean "flag"  *
+* which indicates which message is written per code iteration. The "Write flag" boolean is also *
+* set to high every time it's called. This flag dictates when the timer has elapsed, and it is time *
+* for the code to poll the next message onto the Teensy's CAN Bus                                            *
+***************************************************************************************************/
+void print_Timer_toggle(void)
+{
+  flag=!flag;
+  write_flag=1;
+}
+
+//CAN message initialiser
+void initCanMessage(CAN_message_t *msg, uint8_t length, int addr)
+{
+  msg->id = addr;
+  msg->len = length;
+  msg->flags.extended = 1;
+  msg->flags.remote   = 0;
+  msg->flags.overrun  = 0;
+  msg->flags.reserved = 0;
+  for (int i=0;i<length;i++)
+  {
+    msg->buf[i] = 0;  //Init the message to zeros
+  }
+}
+
+void BMSProcess(void) {
   if(Can2.read(BMS_inMsg)) {
       if(BMS_inMsg.id==0x00111100)
       {
@@ -361,76 +436,159 @@ void loop() {
     }
     write_flag=0;
   }
-  
 }
 
-/*User defined functions:
- * int compressInputs()
- */
-
-
-
-//Interrupt callback for test CAN message.  Only call if TESTMODE is enabled
-void testCanSniff(const CAN_message_t &inMsg)
-{
-  //hexDump(8, inMsg.buf);
-  IOBits = inMsg.buf[0];
-}
-
-//RTD helper functions in other file 
-
-/*Update the state of the Shudtdown Circuit int
-void, param pointer to shutdown variables
-*/
-void updateShutdown(uint8_t *sdLocation)
-{
-	uint8_t tempSDS = 0;
-	//Inertia Switch
-	if (digitalRead(SDINERTIA) == HIGH)
-		tempSDS |= 0x01;
-	//Brake Overtravel Switch
-	if (digitalRead(SDBOTS) == HIGH)
-		tempSDS |= 0x02;
-	//Dash E-Stop Switch
-	if (digitalRead(SDDASH) == HIGH)
-		tempSDS |= 0x04;
-	//Other parts of the SDC to be retrieved via CAN later
-	if (true)
-		tempSDS |= 0x08;
-	if (true)
-		tempSDS |= 0x10;
-	if (true)
-		tempSDS |= 0x20;
-	if (true)
-		tempSDS |= 0x40;
-	if (true)
-		tempSDS |= 0x80;
-	*sdLocation = tempSDS;
-}
-
-/***************************************************************************************************
-* This is the timer function that is run every 20ms. Each iteration it toggles the boolean "flag"  *
-* which indicates which message is written per code iteration. The "Write flag" boolean is also *
-* set to high every time it's called. This flag dictates when the timer has elapsed, and it is time *
-* for the code to poll the next message onto the Teensy's CAN Bus                                            *
-***************************************************************************************************/
-void print_Timer_toggle(void)
-{
-  flag=!flag;
-  write_flag=1;
-}
-
-//CAN message initialiser
-void initCanMessage(CAN_message_t *msg, uint8_t length, int addr)
-{
-  msg->id = addr;
-  msg->len = length;
-  msg->flags.extended = 1;
-  msg->flags.remote   = 0;
-  msg->flags.overrun  = 0;
-  msg->flags.reserved = 0;
-  for (int i=0;i<length;i++)
-  {
-    msg->buf[i] = 0;  //Init the message to zeros
+void Bus1Read() {
+  if(Can1.read(bus1_in)) {
+    if(bus1_in.id==0x00001100){
+      SC_Rear = bus1_in.buf[7];
+    }
+    else if (bus1_in.id==0x00001001){
+      batV = bus1_in.buf[0]*256 + bus1_in.buf[1];
+    }
   }
+}
+
+void HFProcess() {
+  //Read data test
+  uint8_t SC_Rear_t = SC_Rear;
+    if (SC_Rear_t >= 16){
+      //HFL ok
+      HFL_State = 1;
+      SC_Rear_t -= 16;
+    }
+    else {
+      HFL_State = 0;
+    }
+    if (SC_Rear_t >= 8){
+      //HF_Dis ok
+      Dis_State = 1;
+      SC_Rear_t -= 8;
+    }
+    else {
+      Dis_State = 0;
+    }
+    if (SC_Rear_t >= 4){
+      //HF_IMD ok
+      IMD_State = 1;
+      SC_Rear_t -= 4;
+    }
+    else {
+      IMD_State = 0;
+    }
+    if (SC_Rear >= 2){
+      //HF_BMS ok
+      BMS_State = 1;
+      SC_Rear_t -= 2;
+    }
+    else {
+      BMS_State = 0;
+    }
+    if (SC_Rear_t >= 1){
+      //BSPD ok
+      BSPD_State = 1;
+      SC_Rear_t -= 1;
+    }
+    else {
+      BSPD_State = 0;
+    }
+}
+
+void updateHardFaults(){
+  switch (dis) {
+  case 1:
+    resetHardFaultL(3);
+    if (Dis_State == 0){
+      dis = 3;
+    }
+    break;
+  case 2:
+    standbyHardFaultL(3);
+    if (Dis_State == 0){
+      dis = 3;
+    }
+    else if (HFL_State == 1){
+      dis = 1;
+    }
+    break;
+  case 3:
+    setHardFaultL(3);
+    if (Dis_State == 1){
+      dis = 2;
+    }
+    break;
+  }
+  
+  switch (imd) {
+  case 1:
+    resetHardFaultL(2);
+    if (IMD_State == 0){
+      imd = 3;
+    }
+    break;
+  case 2:
+    standbyHardFaultL(2);
+    if (IMD_State == 0){
+      imd = 3;
+    }
+    else if (HFL_State == 1){
+      imd = 1;
+    }
+    break;
+  case 3:
+    setHardFaultL(2);
+    if (IMD_State == 1){
+      imd = 2;
+    }
+    break;
+  }
+  
+  switch (bms) {
+  case 1:
+    resetHardFaultL(1);
+    if (BMS_State == 0){
+      bms = 3;
+    }
+    break;
+  case 2:
+    standbyHardFaultL(1);
+    if (BMS_State == 0){
+      bms = 3;
+    }
+    else if (HFL_State == 1){
+      bms = 1;
+    }
+    break;
+  case 3:
+    setHardFaultL(1);
+    if (BMS_State == 1){
+      bms = 2;
+    }
+    break;
+  }
+  
+  switch (bspd) {
+  case 1:
+    resetHardFaultL(0);
+    if (BSPD_State == 0){
+      bspd = 3;
+    }
+    break;
+  case 2:
+    standbyHardFaultL(0);
+    if (BSPD_State == 0){
+      bspd = 3;
+    }
+    else if (HFL_State == 1){
+      bspd = 1;
+    }
+    break;
+  case 3:
+    setHardFaultL(0);
+    if (BSPD_State == 1){
+      bspd = 2;
+    }
+    break;
+  }
+
 }
