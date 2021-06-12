@@ -16,8 +16,6 @@
 #include "interface.h"	//Human interface section - FastLED and 7 seg 
 #include "rtd.h"
 #include "canHelper.h"
-//If running in test mode, uncomment this
-//#include "dashtesting.h"
 
 
 
@@ -33,17 +31,13 @@ uint8_t runMode = 0;
 uint8_t shutdownState = 255;	//Init to =0 for production
 uint8_t SC_Rear = 0;
 
-//hard fault states
-bool HFL_State = 0;
-bool Dis_State = 0;
-bool IMD_State = 0;
-bool BMS_State = 0;
-bool BSPD_State = 0;
-int dis = 1;
-int imd = 1;
-int bms = 1;
-int bspd = 1;
+//Dash bit HFs from LSB to MSB: BSPD BMS IMD DIS HFL NULL NULL NULL
+bool HF_States[] = {0, 0, 0, 0, 0, 0, 0, 0};
+//BSPD BMS IMD DIS
+int HF_Led_States[] = {1, 1, 1, 1};
 int batV = 0;
+int highTemp = 0;
+int rMTemp, lMTemp;
 //End of globals
 
 //LED testy
@@ -211,7 +205,13 @@ void loop() {
 				
 				
 				//Dash display update
-				dashLeft.print((int)batV);
+//        if (rMTemp >= lMTemp){
+//          highTemp = rMTemp;
+//        }
+//        else {
+//          highTemp = lMTemp;
+//        }
+				dashLeft.print(highTemp);
 				cli();
 				dashLeft.writeDisplay();
 				sei();
@@ -241,7 +241,6 @@ void loop() {
 				//Update data shown on addressable LEDs
 				updateSDL(shutdownState);
 				updateRTDL(isRTD);
-				//clearHardFaultL();
 				updateTrailBrakeL(digitalRead(APPSTRAIL));
 				
 				//LED display update
@@ -270,13 +269,7 @@ void loop() {
 	{
 		//Update the state of the Shutdown circuit
 		//TODO
-		
-		
-		//Update the dash display - for now, output diagnostic data 
-		//IOBits = collectInputs();
-		//digitalWrite(TEENSY_LED,LOW);
-		
-		Can2.events();	//Call the CAN event handler to enable CAN interrupt callback functions
+
 	}
 	
 	//Shutdown circuit debounce
@@ -307,7 +300,7 @@ void loop() {
   Bus1Read();
 
   //Determine Hard Fault states from can message
-  HFProcess();
+  byteUnpack();
 
   //Update dash HF led's
   updateHardFaults();
@@ -331,16 +324,15 @@ void updateShutdown(uint8_t *sdLocation)
 	//Dash E-Stop Switch
 	if (digitalRead(SDDASH) == HIGH)
 		tempSDS |= 0x04;
-	//Other parts of the SDC to be retrieved via CAN later
-	if (true)
+	if (HF_States[0] == HIGH)
 		tempSDS |= 0x08;
-	if (true)
+	if (HF_States[1] == HIGH)
 		tempSDS |= 0x10;
-	if (true)
+	if (HF_States[2] == HIGH)
 		tempSDS |= 0x20;
-	if (true)
+	if (HF_States[3] == HIGH)
 		tempSDS |= 0x40;
-	if (true)
+	if (HF_States[4] == HIGH)
 		tempSDS |= 0x80;
 	*sdLocation = tempSDS;
 }
@@ -446,149 +438,61 @@ void Bus1Read() {
     else if (bus1_in.id==0x00001001){
       batV = bus1_in.buf[0]*256 + bus1_in.buf[1];
     }
+//    else if (bus1_in.id==0xCF10F05) { //right controller
+//      rMTemp = bus1_in.buf[2] - 40;
+//    }
+//    else if (bus1_in.id==0xCF11F05) { //left controller
+//      lMTemp = bus1_in.buf[2] - 40;
+//    }
   }
 }
 
-void HFProcess() {
-  //Read data test
-  uint8_t SC_Rear_t = SC_Rear;
-    if (SC_Rear_t >= 16){
-      //HFL ok
-      HFL_State = 1;
-      SC_Rear_t -= 16;
-    }
-    else {
-      HFL_State = 0;
-    }
-    if (SC_Rear_t >= 8){
-      //HF_Dis ok
-      Dis_State = 1;
-      SC_Rear_t -= 8;
-    }
-    else {
-      Dis_State = 0;
-    }
-    if (SC_Rear_t >= 4){
-      //HF_IMD ok
-      IMD_State = 1;
-      SC_Rear_t -= 4;
-    }
-    else {
-      IMD_State = 0;
-    }
-    if (SC_Rear >= 2){
-      //HF_BMS ok
-      BMS_State = 1;
-      SC_Rear_t -= 2;
-    }
-    else {
-      BMS_State = 0;
-    }
-    if (SC_Rear_t >= 1){
-      //BSPD ok
-      BSPD_State = 1;
-      SC_Rear_t -= 1;
-    }
-    else {
-      BSPD_State = 0;
-    }
+//Fucntion unpacks bits from CAN message bytes
+//Sequentially removes MSB from byte and assigns flags to given array as output
+//TODO: Make universal in that it can receive and unpack any array and input byte
+// CHECK BIT ORDERING
+void byteUnpack() {
+  int i;
+  uint8_t byteTemp = SC_Rear;     //tracks reduction of 1 bits
+  uint8_t MSB = 128;              //Starting breakpoint for MSB
+  for (i=7;i>=0;i--){
+      if (byteTemp >= MSB){       //bit = 1
+        HF_States[i] = 1;
+        byteTemp -= MSB;
+      }
+      else {                      //bit = 0
+        HF_States[i] = 0;
+      }
+      MSB = MSB/2;                //Reduce to next MSB breakpoint
+  }
 }
 
 void updateHardFaults(){
-  switch (dis) {
-  case 1:
-    resetHardFaultL(3);
-    if (Dis_State == 0){
-      dis = 3;
-    }
-    break;
-  case 2:
-    standbyHardFaultL(3);
-    if (Dis_State == 0){
-      dis = 3;
-    }
-    else if (HFL_State == 1){
-      dis = 1;
-    }
-    break;
-  case 3:
-    setHardFaultL(3);
-    if (Dis_State == 1){
-      dis = 2;
-    }
-    break;
-  }
+  int i;
   
-  switch (imd) {
-  case 1:
-    resetHardFaultL(2);
-    if (IMD_State == 0){
-      imd = 3;
+  for (i=0; i<=3; i++){
+    switch (HF_Led_States[i]) {
+    case 1:
+      resetHardFaultL(i);
+      if (HF_States[i] == 0){
+        HF_Led_States[i] = 3;
+      }
+      break;
+    case 2:
+      standbyHardFaultL(i);
+      if (HF_States[i] == 0){
+        HF_Led_States[i] = 3;
+      }
+      else if (HF_States[4] == 1){
+        HF_Led_States[i] = 1;
+      }
+      break;
+    case 3:
+      setHardFaultL(i);
+      if (HF_States[i] == 1){
+        HF_Led_States[i] = 2;
+      }
+      break;
     }
-    break;
-  case 2:
-    standbyHardFaultL(2);
-    if (IMD_State == 0){
-      imd = 3;
-    }
-    else if (HFL_State == 1){
-      imd = 1;
-    }
-    break;
-  case 3:
-    setHardFaultL(2);
-    if (IMD_State == 1){
-      imd = 2;
-    }
-    break;
   }
-  
-  switch (bms) {
-  case 1:
-    resetHardFaultL(1);
-    if (BMS_State == 0){
-      bms = 3;
-    }
-    break;
-  case 2:
-    standbyHardFaultL(1);
-    if (BMS_State == 0){
-      bms = 3;
-    }
-    else if (HFL_State == 1){
-      bms = 1;
-    }
-    break;
-  case 3:
-    setHardFaultL(1);
-    if (BMS_State == 1){
-      bms = 2;
-    }
-    break;
-  }
-  
-  switch (bspd) {
-  case 1:
-    resetHardFaultL(0);
-    if (BSPD_State == 0){
-      bspd = 3;
-    }
-    break;
-  case 2:
-    standbyHardFaultL(0);
-    if (BSPD_State == 0){
-      bspd = 3;
-    }
-    else if (HFL_State == 1){
-      bspd = 1;
-    }
-    break;
-  case 3:
-    setHardFaultL(0);
-    if (BSPD_State == 1){
-      bspd = 2;
-    }
-    break;
-  }
-
 }

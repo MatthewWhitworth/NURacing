@@ -62,8 +62,8 @@ void loop() {
     can1.write(msg);
   }
 
-  //every 500ms write SC state to bus
-  if (millis() - scTime >= 500){
+  //every 100ms write SC state to bus
+  if (millis() - scTime >= 100){
     HF_State = collectInputs();
     msg_sc.buf[7] = HF_State;
     can1.write(msg_sc);

@@ -62,7 +62,7 @@ void setHardFaultL(uint8_t LEDno)
 
 void standbyHardFaultL(uint8_t LEDno)
 {
-  leds[HF_L_INDEX + 2*LEDno] = CRGB::Yellow;
+  leds[HF_L_INDEX + 2*LEDno] = CRGB::Orange;
 }
 
 void resetHardFaultL(uint8_t LEDno)
