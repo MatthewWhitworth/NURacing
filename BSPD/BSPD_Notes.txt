@@ -1,4 +1,0 @@
-To add:
- 	hysterisis
-	Open/short circuit protection
-	Time delay values and or gate current sink capabilities
